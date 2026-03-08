@@ -13,6 +13,9 @@
 declare(strict_types=1);
 
 use PapiAI\Core\Contracts\ProviderInterface;
+use PapiAI\Core\Exception\AuthenticationException;
+use PapiAI\Core\Exception\ProviderException;
+use PapiAI\Core\Exception\RateLimitException;
 use PapiAI\Core\Message;
 use PapiAI\Core\Response;
 use PapiAI\Core\StreamChunk;
@@ -42,6 +45,11 @@ class TestableGroqProvider extends GroqProvider
         foreach ($this->fakeStreamEvents as $event) {
             yield $event;
         }
+    }
+
+    public function callThrowForStatusCode(int $httpCode, ?array $data): never
+    {
+        $this->throwForStatusCode($httpCode, $data);
     }
 }
 
@@ -397,6 +405,31 @@ describe('GroqProvider', function () {
             $chunks = iterator_to_array($this->provider->stream([Message::user('Hi')]));
 
             expect($chunks)->toHaveCount(2); // text + complete
+        });
+    });
+
+    describe('error mapping', function () {
+        it('throws AuthenticationException on 401', function () {
+            expect(fn () => $this->provider->callThrowForStatusCode(401, [
+                'error' => ['message' => 'Invalid API key'],
+            ]))->toThrow(AuthenticationException::class);
+        });
+
+        it('throws RateLimitException on 429', function () {
+            expect(fn () => $this->provider->callThrowForStatusCode(429, [
+                'error' => ['message' => 'Rate limit exceeded'],
+            ]))->toThrow(RateLimitException::class);
+        });
+
+        it('throws ProviderException on 500', function () {
+            expect(fn () => $this->provider->callThrowForStatusCode(500, [
+                'error' => ['message' => 'Internal server error'],
+            ]))->toThrow(ProviderException::class);
+        });
+
+        it('throws ProviderException with unknown error when data is null', function () {
+            expect(fn () => $this->provider->callThrowForStatusCode(500, null))
+                ->toThrow(ProviderException::class);
         });
     });
 });
