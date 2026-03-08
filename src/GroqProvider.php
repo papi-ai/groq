@@ -27,12 +27,20 @@ use PapiAI\Core\ToolCall;
 use RuntimeException;
 
 /**
- * Groq API Provider.
+ * Groq API provider for PapiAI.
  *
- * Supports Groq-hosted models including:
+ * Bridges PapiAI's core types with the Groq Cloud API (OpenAI-compatible format),
+ * handling format conversion. Powered by Groq's LPU (Language Processing Unit)
+ * inference hardware for ultra-low-latency responses. Supports chat completions,
+ * streaming, tool use, vision, and structured output. Authentication via Bearer token.
+ * All HTTP via ext-curl.
+ *
+ * Supported models include:
  * - llama-3.3-70b-versatile (general purpose)
  * - llama-3.1-8b-instant (fast inference)
  * - mixtral-8x7b-32768 (Mixtral)
+ *
+ * @see https://console.groq.com/docs/api-reference
  */
 class GroqProvider implements ProviderInterface
 {
@@ -42,6 +50,13 @@ class GroqProvider implements ProviderInterface
     public const MODEL_LLAMA_3_1_8B = 'llama-3.1-8b-instant';
     public const MODEL_MIXTRAL_8X7B = 'mixtral-8x7b-32768';
 
+    /**
+     * Create a new Groq provider instance.
+     *
+     * @param string $apiKey       Groq API key for Bearer token authentication
+     * @param string $defaultModel Default model identifier for chat requests
+     * @param int    $defaultMaxTokens Default maximum tokens for responses
+     */
     public function __construct(
         private readonly string $apiKey,
         private readonly string $defaultModel = self::MODEL_LLAMA_3_3_70B,
@@ -49,6 +64,18 @@ class GroqProvider implements ProviderInterface
     ) {
     }
 
+    /**
+     * Send a chat completion request to the Groq API.
+     *
+     * @param Message[] $messages Conversation messages to send
+     * @param array     $options  Options: model, maxTokens, temperature, stopSequences, outputSchema, tools
+     *
+     * @return Response The parsed API response
+     *
+     * @throws AuthenticationException When the API key is invalid
+     * @throws RateLimitException      When the rate limit is exceeded
+     * @throws ProviderException       When the API returns an error
+     */
     public function chat(array $messages, array $options = []): Response
     {
         $payload = $this->buildPayload($messages, $options);
@@ -57,6 +84,16 @@ class GroqProvider implements ProviderInterface
         return Response::fromOpenAI($response, $messages);
     }
 
+    /**
+     * Stream a chat completion response from the Groq API.
+     *
+     * Yields StreamChunk objects as server-sent events are received.
+     *
+     * @param Message[] $messages Conversation messages to send
+     * @param array     $options  Options: model, maxTokens, temperature, stopSequences, outputSchema, tools
+     *
+     * @return iterable<StreamChunk> Stream of response chunks
+     */
     public function stream(array $messages, array $options = []): iterable
     {
         $payload = $this->buildPayload($messages, $options);
@@ -73,21 +110,33 @@ class GroqProvider implements ProviderInterface
         }
     }
 
+    /**
+     * Indicates that Groq supports tool/function calling.
+     */
     public function supportsTool(): bool
     {
         return true;
     }
 
+    /**
+     * Indicates that Groq supports vision/image inputs.
+     */
     public function supportsVision(): bool
     {
         return true;
     }
 
+    /**
+     * Indicates that Groq supports structured JSON output via json_schema.
+     */
     public function supportsStructuredOutput(): bool
     {
         return true;
     }
 
+    /**
+     * Return the provider identifier.
+     */
     public function getName(): string
     {
         return 'groq';
@@ -244,7 +293,16 @@ class GroqProvider implements ProviderInterface
     }
 
     /**
-     * Make an API request.
+     * Send a synchronous POST request to the Groq API.
+     *
+     * @param array $payload The JSON-serializable request body
+     *
+     * @return array The decoded JSON response
+     *
+     * @throws RuntimeException        When the cURL request fails
+     * @throws AuthenticationException When the API key is invalid
+     * @throws RateLimitException      When the rate limit is exceeded
+     * @throws ProviderException       When the API returns an error
      */
     protected function request(array $payload): array
     {
@@ -280,11 +338,14 @@ class GroqProvider implements ProviderInterface
     }
 
     /**
-     * Throw the appropriate exception based on HTTP status code.
+     * Map HTTP error status codes to the appropriate PapiAI exception.
      *
-     * @throws AuthenticationException
-     * @throws RateLimitException
-     * @throws ProviderException
+     * @param int        $httpCode The HTTP response status code
+     * @param array|null $data     The decoded error response body
+     *
+     * @throws AuthenticationException For 401 responses
+     * @throws RateLimitException      For 429 responses
+     * @throws ProviderException       For all other error responses
      */
     protected function throwForStatusCode(int $httpCode, ?array $data): never
     {
@@ -315,9 +376,13 @@ class GroqProvider implements ProviderInterface
     }
 
     /**
-     * Make a streaming API request.
+     * Send a streaming POST request and yield parsed SSE events.
      *
-     * @return Generator<array>
+     * Buffers the full response then parses server-sent events line by line.
+     *
+     * @param array $payload The JSON-serializable request body with stream=true
+     *
+     * @return Generator<int, array> Yields decoded JSON event data from each SSE data line
      */
     protected function streamRequest(array $payload): Generator
     {
