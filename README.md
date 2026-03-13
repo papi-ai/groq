@@ -1,6 +1,6 @@
 # PapiAI Groq Provider
 
-[![Tests](https://github.com/papi-ai/groq/workflows/CI/badge.svg)](https://github.com/papi-ai/groq/actions?query=workflow%3ACI)
+[![CI](https://github.com/papi-ai/groq/workflows/CI/badge.svg)](https://github.com/papi-ai/groq/actions?query=workflow%3ACI) [![Latest Version](https://img.shields.io/packagist/v/papi-ai/groq.svg)](https://packagist.org/packages/papi-ai/groq) [![Total Downloads](https://img.shields.io/packagist/dt/papi-ai/groq.svg)](https://packagist.org/packages/papi-ai/groq) [![PHP Version](https://img.shields.io/packagist/php-v/papi-ai/groq.svg)](https://packagist.org/packages/papi-ai/groq) [![License](https://img.shields.io/packagist/l/papi-ai/groq.svg)](https://packagist.org/packages/papi-ai/groq)
 
 Groq provider for [PapiAI](https://github.com/papi-ai/papi-core) - A simple but powerful PHP library for building AI agents.
 
