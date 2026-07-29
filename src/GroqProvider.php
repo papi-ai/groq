@@ -24,6 +24,7 @@ use PapiAI\Core\Response;
 use PapiAI\Core\Role;
 use PapiAI\Core\StreamChunk;
 use PapiAI\Core\ToolCall;
+use PapiAI\Core\ToolChoice;
 use RuntimeException;
 
 /**
@@ -68,7 +69,8 @@ class GroqProvider implements ProviderInterface
      * Send a chat completion request to the Groq API.
      *
      * @param Message[] $messages Conversation messages to send
-     * @param array     $options  Options: model, maxTokens, temperature, stopSequences, outputSchema, tools
+     * @param array     $options  Options: model, maxTokens, temperature, stopSequences, outputSchema,
+     *   tools, toolChoice
      *
      * @return Response The parsed API response
      *
@@ -186,6 +188,21 @@ class GroqProvider implements ProviderInterface
         // Handle tools
         if (isset($options['tools']) && !empty($options['tools'])) {
             $payload['tools'] = $this->convertTools($options['tools']);
+        }
+
+        // Forced tool choice (OpenAI-compatible). Validation lives in core and throws before any HTTP call.
+        if (isset($options['toolChoice'])) {
+            $choice = ToolChoice::fromOption($options['toolChoice'], $options['tools'] ?? []);
+
+            if (!empty($options['tools'])) {
+                $payload['tool_choice'] = $choice->toolName !== null
+                    ? ['type' => 'function', 'function' => ['name' => $choice->toolName]]
+                    : match ($choice->mode) {
+                        ToolChoice::NONE => 'none',
+                        ToolChoice::REQUIRED => 'required',
+                        default => 'auto',
+                    };
+            }
         }
 
         return $payload;
