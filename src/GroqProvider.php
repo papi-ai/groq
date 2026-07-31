@@ -17,9 +17,11 @@ namespace PapiAI\Groq;
 use Generator;
 use PapiAI\Core\Contracts\NamedToolSelectableInterface;
 use PapiAI\Core\Contracts\ProviderInterface;
+use PapiAI\Core\Effort;
 use PapiAI\Core\Exception\AuthenticationException;
 use PapiAI\Core\Exception\ProviderException;
 use PapiAI\Core\Exception\RateLimitException;
+use PapiAI\Core\Exception\UnknownEffortException;
 use PapiAI\Core\Message;
 use PapiAI\Core\Response;
 use PapiAI\Core\Role;
@@ -43,9 +45,9 @@ use RuntimeException;
  * - mixtral-8x7b-32768 (Mixtral)
  *
  * @see https://console.groq.com/docs/api-reference *
- * The neutral `effort` option is accepted and ignored here. Groq does expose reasoning_effort on its gpt-oss models, but papi does not map it yet, so the option is accepted and ignored for now. Note it cannot be combined with tool calling or JSON mode. Ignoring it
- * degrades nothing the caller was promised, which is why it is silent where an unhonourable
- * `toolChoice` throws.
+ * The neutral effort option maps to reasoning_effort on the gpt-oss models. The rest of the
+ * catalogue is third-party and controls reasoning differently or not at all, so the option is
+ * left off there rather than guessed at.
  */
 class GroqProvider implements ProviderInterface, NamedToolSelectableInterface
 {
@@ -72,6 +74,7 @@ class GroqProvider implements ProviderInterface, NamedToolSelectableInterface
         private readonly string $apiKey,
         private readonly string $defaultModel = self::MODEL_GPT_OSS_120B,
         private readonly int $defaultMaxTokens = 4096,
+        private readonly ?Effort $defaultEffort = null,
     ) {
     }
 
@@ -215,7 +218,35 @@ class GroqProvider implements ProviderInterface, NamedToolSelectableInterface
             }
         }
 
+        // Reasoning effort, which on Groq is a property of the hosted model rather than of Groq.
+        // Only the gpt-oss family takes reasoning_effort; the rest of the catalogue either uses a
+        // different control or none, so the option is left off rather than guessed at.
+        $effort = $this->effortFor($options);
+        $model = (string) ($options['model'] ?? $this->defaultModel);
+
+        if ($effort !== null && str_contains($model, 'gpt-oss')) {
+            $payload['reasoning_effort'] = $effort->nearestOf([Effort::Low, Effort::Medium, Effort::High])->value;
+        }
+
         return $payload;
+    }
+
+    /**
+     * The effort this request asks for: the per-call option, else the provider default.
+     *
+     * @param array<string, mixed> $options The caller's request options
+     *
+     * @throws UnknownEffortException When the level is not one core defines
+     */
+    private function effortFor(array $options): ?Effort
+    {
+        if (!isset($options['effort'])) {
+            return $this->defaultEffort;
+        }
+
+        $level = (string) $options['effort'];
+
+        return Effort::tryFrom($level) ?? throw new UnknownEffortException($level);
     }
 
     /**
