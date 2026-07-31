@@ -30,10 +30,12 @@ echo $response->text;
 ## Models
 
 ```php
-GroqProvider::MODEL_LLAMA_3_3_70B  // 'llama-3.3-70b-versatile' (default)
-GroqProvider::MODEL_LLAMA_3_1_8B   // 'llama-3.1-8b-instant' (fast)
-GroqProvider::MODEL_MIXTRAL_8X7B   // 'mixtral-8x7b-32768'
+GroqProvider::MODEL_GPT_OSS_120B  // 'openai/gpt-oss-120b' (default)
+GroqProvider::MODEL_GPT_OSS_20B   // 'openai/gpt-oss-20b' (fast)
 ```
+
+The Llama and Mixtral constants are still shipped but deprecated. Mixtral was decommissioned on 20 March 2025, and both Llama models are decommissioned on **16 August 2026**.
+
 
 ## Capabilities
 
