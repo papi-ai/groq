@@ -12,6 +12,8 @@
 
 declare(strict_types=1);
 
+use PapiAI\Core\Contracts\NamedToolSelectableInterface;
+use PapiAI\Core\Contracts\ToolSelectableInterface;
 use PapiAI\Core\Message;
 use PapiAI\Groq\GroqProvider;
 
@@ -75,5 +77,12 @@ describe('GroqProvider tool choice', function () {
     it('throws when naming a tool that was never declared', function () {
         expect(fn () => $this->provider->chat([Message::user('hi')], ['tools' => $this->tools, 'toolChoice' => ['name' => 'nope']]))
             ->toThrow(InvalidArgumentException::class);
+    });
+});
+
+describe('GroqProvider tool-selection capability', function () {
+    it('declares what it can force, so callers can ask instead of catching', function () {
+        expect(is_subclass_of(GroqProvider::class, NamedToolSelectableInterface::class))->toBeTrue();
+        expect(is_subclass_of(GroqProvider::class, ToolSelectableInterface::class))->toBeTrue();
     });
 });
