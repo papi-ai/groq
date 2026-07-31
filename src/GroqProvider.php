@@ -41,14 +41,23 @@ use RuntimeException;
  * - llama-3.1-8b-instant (fast inference)
  * - mixtral-8x7b-32768 (Mixtral)
  *
- * @see https://console.groq.com/docs/api-reference
+ * @see https://console.groq.com/docs/api-reference *
+ * The neutral `effort` option is accepted and ignored here. Groq does expose reasoning_effort on its gpt-oss models, but papi does not map it yet, so the option is accepted and ignored for now. Note it cannot be combined with tool calling or JSON mode. Ignoring it
+ * degrades nothing the caller was promised, which is why it is silent where an unhonourable
+ * `toolChoice` throws.
  */
 class GroqProvider implements ProviderInterface
 {
     private const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+    public const MODEL_GPT_OSS_120B = 'openai/gpt-oss-120b';
+    public const MODEL_GPT_OSS_20B = 'openai/gpt-oss-20b';
+
+    /** @deprecated Decommissioned 16 August 2026. Use MODEL_GPT_OSS_120B. */
     public const MODEL_LLAMA_3_3_70B = 'llama-3.3-70b-versatile';
+    /** @deprecated Decommissioned 16 August 2026. Use MODEL_GPT_OSS_20B. */
     public const MODEL_LLAMA_3_1_8B = 'llama-3.1-8b-instant';
+    /** @deprecated Decommissioned 20 March 2025; requests fail. */
     public const MODEL_MIXTRAL_8X7B = 'mixtral-8x7b-32768';
 
     /**
@@ -60,7 +69,7 @@ class GroqProvider implements ProviderInterface
      */
     public function __construct(
         private readonly string $apiKey,
-        private readonly string $defaultModel = self::MODEL_LLAMA_3_3_70B,
+        private readonly string $defaultModel = self::MODEL_GPT_OSS_120B,
         private readonly int $defaultMaxTokens = 4096,
     ) {
     }

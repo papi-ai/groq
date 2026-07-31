@@ -138,7 +138,7 @@ describe('GroqProvider', function () {
 
             $this->provider->chat([Message::user('Hello')]);
 
-            expect($this->provider->lastPayload['model'])->toBe('llama-3.3-70b-versatile');
+            expect($this->provider->lastPayload['model'])->toBe('openai/gpt-oss-120b');
         });
 
         it('overrides model and options from parameters', function () {
