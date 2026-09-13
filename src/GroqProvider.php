@@ -53,15 +53,15 @@ class GroqProvider implements ProviderInterface, NamedToolSelectableInterface
 {
     private const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-    public const MODEL_GPT_OSS_120B = 'openai/gpt-oss-120b';
-    public const MODEL_GPT_OSS_20B = 'openai/gpt-oss-20b';
+    public const MODEL_GPT_OSS_120B = GroqModel::GptOss120b->value;
+    public const MODEL_GPT_OSS_20B = GroqModel::GptOss20b->value;
 
     /** @deprecated Decommissioned 16 August 2026. Use MODEL_GPT_OSS_120B. */
-    public const MODEL_LLAMA_3_3_70B = 'llama-3.3-70b-versatile';
+    public const MODEL_LLAMA_3_3_70B = GroqModel::Llama33Versatile->value;
     /** @deprecated Decommissioned 16 August 2026. Use MODEL_GPT_OSS_20B. */
-    public const MODEL_LLAMA_3_1_8B = 'llama-3.1-8b-instant';
+    public const MODEL_LLAMA_3_1_8B = GroqModel::Llama31Instant->value;
     /** @deprecated Decommissioned 20 March 2025; requests fail. */
-    public const MODEL_MIXTRAL_8X7B = 'mixtral-8x7b-32768';
+    public const MODEL_MIXTRAL_8X7B = GroqModel::Mixtral8x7b->value;
 
     /**
      * Create a new Groq provider instance.
