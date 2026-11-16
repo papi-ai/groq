@@ -270,7 +270,7 @@ class GroqProvider implements ProviderInterface, NamedToolSelectableInterface
                     'type' => 'function',
                     'function' => [
                         'name' => $tc->name,
-                        'arguments' => json_encode($tc->arguments),
+                        'arguments' => $tc->argumentsAsJson(),
                     ],
                 ];
             }, $message->toolCalls);

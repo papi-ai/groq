@@ -450,3 +450,20 @@ describe('GroqProvider stop reason', function () {
         expect(($this->stoppedBecause)('length'))->toBe(StopReason::MaxTokens);
     });
 });
+
+describe('GroqProvider tool calls without arguments', function () {
+    it('re-sends them as an empty object, which the API requires', function () {
+        $provider = new TestableGroqProvider('test-api-key');
+        $provider->fakeResponse = ['choices' => [['message' => ['role' => 'assistant', 'content' => 'done'], 'finish_reason' => 'stop']], 'usage' => []];
+
+        $provider->chat([
+            Message::user('Run the specs'),
+            Message::assistant('', [new ToolCall('c1', 'run_specs', [])]),
+            Message::toolResult('c1', 'ok'),
+        ]);
+
+        $wire = (string) json_encode($provider->lastPayload);
+        expect($wire)->toContain('"arguments":"{}"');
+        expect($wire)->not->toContain('"arguments":"[]"');
+    });
+});
