@@ -183,7 +183,7 @@ describe('GroqProvider', function () {
                 [
                     'name' => 'get_weather',
                     'description' => 'Get weather',
-                    'input_schema' => ['type' => 'object', 'properties' => []],
+                    'input_schema' => ['type' => 'object', 'properties' => ['city' => ['type' => 'string']]],
                 ],
             ];
 
@@ -195,7 +195,7 @@ describe('GroqProvider', function () {
                     'function' => [
                         'name' => 'get_weather',
                         'description' => 'Get weather',
-                        'parameters' => ['type' => 'object', 'properties' => []],
+                        'parameters' => ['type' => 'object', 'properties' => ['city' => ['type' => 'string']]],
                     ],
                 ],
             ];
